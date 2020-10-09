@@ -6,6 +6,42 @@
 
 create database if not exists agencia_financiamento; 
 use agencia_financiamento;
+create database if not exists dados_cadastrais;
+use dados_cadastrais;
+
+create table if not exists Pessoa(
+	id integer not null auto_increment primary key,
+	nome varchar(100) not null,
+    rg varchar(8),
+    data_nascimento date not null,
+    nacionalidade varchar(100),
+    sexo varchar(25),
+    telefone varchar(100),
+    estado_civil varchar(100)
+);
+create table if not exists Funcionario(
+	id integer not null auto_increment primary key,
+    matricula varchar(100) not null,
+    data_admissao date not null,
+    cic varchar(100) not null,
+	pessoa_id integer not null,
+	endereco_id integer not null,
+    constraint fk_funcionario_pessoa foreign key (pessoa_id) references Pessoa(id),
+    constraint fk_funcionario_endereco foreign key (endereco_id) references Endereco(id)
+);
+create table if not exists Dependente(
+	id integer not null auto_increment primary key,
+	pessoa_id integer not null,
+    funcionario_id integer not null,
+    constraint fk_dependente_pessoa foreign key (pessoa_id) references Pessoa(id),
+    constraint fk_dependente_funcionario foreign key (funcionario_id) references Funcionario(id)
+);
+create table if not exists Endereco(
+	id integer not null auto_increment primary key,
+	logradouro varchar(255) not null,
+    cep varchar(10) not null,
+    complemento varchar(255) not null
+);
 
 -- tables
 create table if not exists AreaPesquisa(
@@ -76,6 +112,85 @@ create table if not exists AvaliadorAnalise(
 	constraint fk_analise_avaliador foreign key (analise_id) references Analise(id),
 	constraint composta_id primary key(avaliador_id, analise_id) 
 );
+
+-- inner joins
+ SELECT *
+ FROM Usuario
+ INNER JOIN Avaliador
+ ON Usuario.id = Avaliador.usuario_id;
+ 
+ SELECT Usuario.nome, Usuario.grau_cientifico
+ FROM Usuario
+ INNER JOIN Pesquisador
+ ON Usuario.id = Pesquisador.usuario_id; 
+
+
+-- views
+--     CREATE VIEW [nomedaview]
+--     AS SELECT [colunas]
+--     from [tabela]
+--     where [condicoes];
+CREATE VIEW vw_AnaliseProjeto
+AS SELECT p.titulo, p.instituicao, a.status FROM agencia_financiamento.Analise AS a
+INNER JOIN agencia_financiamento.Projeto AS p
+ON a.projeto_id = p.id;
+
+SELECT * FROM vw_AnaliseProjeto;
+
+-- ALTER VIEW vw_AnaliseProjeto;
+-- triggers
+-- create table if not exists Log_Analise(
+-- 	id integer not null auto_increment primary key,
+--     data_cadastro date not null, 
+--     data_cadastro_old date not null, 
+--     data_avaliacao date not null,
+--     data_avaliacao_old date not null,
+--     data_resultado date not null,
+--     data_resultado_old date not null,
+--     status varchar(100) not null,
+--     status_old varchar(100) not null,
+--     resultado varchar(100) not null,
+--     resultado_old varchar(100) not null,
+--     projeto_id integer not null,
+--     constraint fk_projeto_analise foreign key(projeto_id) references Projeto(id)
+-- );
+-- create table logAutor(
+-- 	idlog int(11) not null auto_increment primary key,
+--      nomeOld varchar(100),
+--      nome varchar(100) ,
+--      pseudonimoOld varchar(100),
+--      pseudonimo varchar(100),
+--      anoOld date ,
+--      ano date ,
+--      paisOrigemOld varchar(100),
+--      paisOrigem varchar(100),
+--      notaBibliograficaOld text,
+--      notaBibliografica text,
+--      dataModificacao timestamp
+--      );
+
+DELIMITER $$
+	 create trigger valida_status_analise
+     before insert on projeto
+     for each row
+     begin
+		declare msg varchar(128);
+		if(new.codigo <= 0) then
+            set msg = concat('TriggerError: não é permitido inserir codigo menor ou igual a zero: ',
+            cast(new.codigo as char));
+            signal sqlstate '95000' set message_text = msg;
+		end if;
+	 end;
+  	$$
+SELECT * FROM agencia_financiamento.Projeto;
+
+
+
+
+
+
+
+
 
 
 -- inserts 
